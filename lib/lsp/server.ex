@@ -13,13 +13,16 @@ defmodule PolySSG.LSP.Server do
 
   alias PolySSG.LSP.Handlers.{Completion, Diagnostics, Hover}
 
+  @impl GenLSP
+  def handle_info(_msg, lsp), do: {:noreply, lsp}
+
   def start_link(args) do
-    GenLSP.start_link(__MODULE__, args, name: __MODULE__)
+    GenLSP.start_link(__MODULE__, args, [])
   end
 
   @impl GenLSP
-  def init(lsp, _args) do
-    {:ok, assign(lsp, project_path: nil, detected_ssg: nil)}
+  def init(_lsp, _args) do
+    {:ok, %{project_path: nil, detected_ssg: nil}}
   end
 
   @impl GenLSP
@@ -57,7 +60,8 @@ defmodule PolySSG.LSP.Server do
       }
     }
 
-    {:reply, result, assign(lsp, project_path: project_path, detected_ssg: detected_ssg)}
+    new_state = Map.merge(lsp, %{project_path: project_path, detected_ssg: detected_ssg})
+    {:reply, result, new_state}
   end
 
   @impl GenLSP
