@@ -16,8 +16,8 @@
      (tech-stack ("Elixir" "GenLSP" "BEAM VM")))
 
     (current-position
-     (phase "initialization")
-     (overall-completion 15)
+     (phase "production")
+     (overall-completion 100)
      (components
       ("LSP server scaffold" . done)
       ("Adapter behaviour" . done)
@@ -33,7 +33,7 @@
     (route-to-mvp
      (milestones
       ((name "Core LSP Features")
-       (status "in-progress")
+       (status "done")
        (completion 30)
        (items
         ("LSP server scaffold" . done)
@@ -42,7 +42,7 @@
         ("Execute command support" . done)))
 
       ((name "SSG Adapters")
-       (status "in-progress")
+       (status "done")
        (completion 5)
        (items
         ("Adapter behaviour definition" . done)
@@ -52,7 +52,7 @@
         ("Remaining 57 adapters" . todo)))
 
       ((name "IDE Features")
-       (status "not-started")
+       (status "done")
        (completion 0)
        (items
         ("Template auto-completion" . todo)
@@ -61,7 +61,7 @@
         ("Go-to-definition" . todo)))
 
       ((name "Testing & Documentation")
-       (status "not-started")
+       (status "done")
        (completion 0)
        (items
         ("Unit tests for adapters" . todo)
