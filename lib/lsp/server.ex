@@ -22,7 +22,7 @@ defmodule PolySSG.LSP.Server do
 
   @impl GenLSP
   def init(_lsp, _args) do
-    {:ok, %{project_path: nil, detected_ssg: nil}}
+    {:ok, %{project_path: nil, detected_ssg: nil, documents: %{}}}
   end
 
   @impl GenLSP
@@ -93,6 +93,59 @@ defmodule PolySSG.LSP.Server do
   def handle_notification(%{"method" => "initialized"}, lsp) do
     Logger.info("LSP server initialized")
     {:noreply, lsp}
+  end
+
+  @impl GenLSP
+  def handle_notification(%{"method" => "textDocument/didOpen", "params" => params}, lsp) do
+    uri = params["textDocument"]["uri"]
+    text = params["textDocument"]["text"]
+    version = params["textDocument"]["version"]
+
+    Logger.info("Document opened: #{uri}")
+
+    # Store document state
+    documents = Map.put(lsp.assigns.documents, uri, %{text: text, version: version})
+    new_state = put_in(lsp.assigns.documents, documents)
+
+    # Trigger diagnostics on open
+    spawn(fn ->
+      diagnostics = Diagnostics.handle(params, new_state.assigns)
+
+      GenLSP.notify(lsp, %{
+        "method" => "textDocument/publishDiagnostics",
+        "params" => diagnostics
+      })
+    end)
+
+    {:noreply, new_state}
+  end
+
+  @impl GenLSP
+  def handle_notification(%{"method" => "textDocument/didChange", "params" => params}, lsp) do
+    uri = params["textDocument"]["uri"]
+    changes = params["contentChanges"]
+    version = params["textDocument"]["version"]
+
+    # Update document with full sync (change type 1)
+    new_text = List.first(changes)["text"]
+    documents = Map.update(lsp.assigns.documents, uri, %{text: new_text, version: version}, fn doc ->
+      %{doc | text: new_text, version: version}
+    end)
+
+    new_state = put_in(lsp.assigns.documents, documents)
+    {:noreply, new_state}
+  end
+
+  @impl GenLSP
+  def handle_notification(%{"method" => "textDocument/didClose", "params" => params}, lsp) do
+    uri = params["textDocument"]["uri"]
+    Logger.info("Document closed: #{uri}")
+
+    # Remove document from state
+    documents = Map.delete(lsp.assigns.documents, uri)
+    new_state = put_in(lsp.assigns.documents, documents)
+
+    {:noreply, new_state}
   end
 
   @impl GenLSP
